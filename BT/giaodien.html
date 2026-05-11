@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hàm Băm SHA — Bài 1, 2, 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Syne:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #080810;
+  --panel: #0e0e1a;
+  --panel2: #12121f;
+  --border: #1a1a2e;
+  --accent: #00f5c4;
+  --purple: #7c3aed;
+  --purple-light: #a78bfa;
+  --orange: #f97316;
+  --red: #ef4444;
+  --green: #22c55e;
+  --text: #e2e8f0;
+  --muted: #4a5568;
+  --mono: 'Share Tech Mono', monospace;
+  --sans: 'Syne', sans-serif;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  min-height: 100vh;
+  padding: 2rem 1rem 4rem;
+  position: relative;
+  overflow-x: hidden;
+}
+
+body::before {
+  content:'';
+  position:fixed; inset:0;
+  background-image:
+    linear-gradient(rgba(0,245,196,0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,245,196,0.025) 1px, transparent 1px);
+  background-size: 44px 44px;
+  pointer-events:none;
+  z-index:0;
+}
+
+.wrap { max-width: 860px; margin: 0 auto; position:relative; z-index:1; }
+
+/* ── HEADER ── */
+header {
+  text-align:center;
+  padding: 2rem 0 2.5rem;
+  animation: fadeDown 0.5s ease both;
+}
+.top-badge {
+  font-family: var(--mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+  letter-spacing: 4px;
+  border: 1px solid rgba(0,245,196,0.3);
+  display:inline-block;
+  padding: 4px 14px;
+  margin-bottom: 1rem;
+}
+h1 {
+  font-size: clamp(2.2rem,7vw,4rem);
+  font-weight:800;
+  letter-spacing:-2px;
+  line-height:1;
+}
+h1 em { color: var(--accent); font-style:normal; }
+.sub {
+  font-family: var(--mono);
+  font-size:0.75rem;
+  color:var(--muted);
+  letter-spacing:2px;
+  margin-top:0.75rem;
+}
+
+/* ── TABS ── */
+.tabs {
+  display:flex;
+  gap:2px;
+  margin-bottom: 1.5rem;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  padding:4px;
+  border-radius:4px;
+  animation: fadeUp 0.5s ease 0.1s both;
+}
+.tab {
+  flex:1;
+  background:transparent;
+  border:none;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size:0.72rem;
+  letter-spacing:2px;
+  padding: 0.7rem;
+  cursor:pointer;
+  border-radius:2px;
+  transition: all 0.2s;
+  text-transform:uppercase;
+}
+.tab:hover { color: var(--text); }
+.tab.active {
+  background: var(--border);
+  color: var(--accent);
+}
+.tab[data-tab="1"].active { color: var(--accent); }
+.tab[data-tab="2"].active { color: var(--purple-light); }
+.tab[data-tab="3"].active { color: var(--orange); }
+
+/* ── PANELS ── */
+.panel { display:none; animation: fadeUp 0.35s ease both; }
+.panel.active { display:block; }
+
+/* ── CARD ── */
+.card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius:3px;
+  padding:1.75rem;
+  margin-bottom:1rem;
+}
+.card-label {
+  font-family: var(--mono);
+  font-size:0.62rem;
+  letter-spacing:3px;
+  text-transform:uppercase;
+  margin-bottom:1rem;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.card-label::after { content:''; flex:1; height:1px; background:var(--border); }
+.cl-green  { color: var(--accent); }
+.cl-purple { color: var(--purple-light); }
+.cl-orange { color: var(--orange); }
+
+/* ── INPUTS ── */
+.row { display:flex; gap:0.6rem; }
+input[type="text"], textarea {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size:0.9rem;
+  padding:0.8rem 1rem;
+  outline:none;
+  border-radius:2px;
+  transition: border-color 0.2s;
+  letter-spacing:0.5px;
+  width:100%;
+}
+input[type="text"]:focus,
+textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(0,245,196,0.07); }
+textarea { resize:vertical; min-height:90px; }
+
+/* ── BUTTONS ── */
+.btn {
+  border:none;
+  font-family: var(--sans);
+  font-weight:700;
+  font-size:0.78rem;
+  padding:0.8rem 1.4rem;
+  cursor:pointer;
+  letter-spacing:1px;
+  border-radius:2px;
+  transition: all 0.15s;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.btn:hover { transform:translateY(-1px); }
+.btn:active { transform:translateY(0); }
+.btn-green  { background:var(--accent);       color:#000; }
+.btn-green:hover  { background:#00ddb0; }
+.btn-purple { background:var(--purple);       color:#fff; }
+.btn-purple:hover { background:#6d28d9; }
+.btn-orange { background:var(--orange);       color:#fff; }
+.btn-orange:hover { background:#ea6d04; }
+.btn-sm {
+  background:transparent;
+  color:var(--muted);
+  border:1px solid var(--border);
+  font-size:0.6rem;
+  padding:3px 10px;
+  letter-spacing:1px;
+}
+.btn-sm:hover { color:var(--accent); border-color:var(--accent); transform:none; }
+
+/* ── HASH OUTPUT ── */
+.hash-out {
+  font-family: var(--mono);
+  font-size:0.75rem;
+  background: var(--bg);
+  border:1px solid var(--border);
+  padding:0.9rem 1rem;
+  border-radius:2px;
+  word-break:break-all;
+  line-height:1.8;
+  letter-spacing:0.3px;
+  min-height:3.5rem;
+  color: var(--text);
+}
+.hl-green  { color: var(--accent); }
+.hl-purple { color: var(--purple-light); }
+.hl-orange { color: var(--orange); }
+
+.algo-row {
+  display:flex;
+  align-items:center;
+  gap:0.75rem;
+  margin-bottom:0.5rem;
+  flex-wrap:wrap;
+}
+.tag {
+  font-family: var(--mono);
+  font-size:0.62rem;
+  font-weight:700;
+  letter-spacing:2px;
+  padding:2px 8px;
+  border-radius:2px;
+}
+.tag-256  { background:rgba(0,245,196,0.1);  color:var(--accent);       border:1px solid rgba(0,245,196,0.25); }
+.tag-512  { background:rgba(124,58,237,0.1); color:var(--purple-light); border:1px solid rgba(124,58,237,0.25); }
+.bit-info { font-family:var(--mono); font-size:0.65rem; color:var(--muted); }
+
+.divider { height:1px; background:var(--border); margin:1.25rem 0; }
+
+/* ── STATS ── */
+.stats { display:grid; grid-template-columns:repeat(3,1fr); gap:0.75rem; margin-top:1rem; }
+.stat {
+  background:var(--bg);
+  border:1px solid var(--border);
+  padding:1rem;
+  border-radius:2px;
+  text-align:center;
+}
+.stat-n { font-size:1.6rem; font-weight:800; line-height:1; margin-bottom:3px; }
+.stat-l { font-family:var(--mono); font-size:0.58rem; color:var(--muted); letter-spacing:1.5px; text-transform:uppercase; }
+
+/* ── BAI 2 SPECIFIC ── */
+.file-drop {
+  border:2px dashed var(--border);
+  border-radius:3px;
+  padding:2rem;
+  text-align:center;
+  cursor:pointer;
+  transition: all 0.2s;
+  position:relative;
+  background: var(--bg);
+}
+.file-drop:hover, .file-drop.drag { border-color: var(--purple-light); background:rgba(124,58,237,0.04); }
+.file-drop input[type="file"] { position:absolute; inset:0; opacity:0; cursor:pointer; }
+.drop-icon { font-size:2rem; margin-bottom:0.5rem; opacity:0.5; }
+.drop-text { font-family:var(--mono); font-size:0.75rem; color:var(--muted); letter-spacing:1px; }
+.drop-text strong { color:var(--purple-light); }
+
+.file-info {
+  display:none;
+  background:var(--bg);
+  border:1px solid var(--border);
+  padding:1rem;
+  border-radius:2px;
+  margin-top:0.75rem;
+  font-family:var(--mono);
+  font-size:0.75rem;
+}
+.file-info.show { display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+.fi-name { color:var(--purple-light); flex:1; }
+.fi-size { color:var(--muted); }
+
+.integrity-result {
+  display:none;
+  padding:1.25rem;
+  border-radius:3px;
+  font-family:var(--mono);
+  font-size:0.85rem;
+  font-weight:700;
+  letter-spacing:1px;
+  text-align:center;
+  margin-top:1rem;
+}
+.integrity-result.show { display:block; }
+.integrity-result.ok  { background:rgba(34,197,94,0.1);  border:1px solid rgba(34,197,94,0.3);  color:var(--green); }
+.integrity-result.fail{ background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.3);  color:var(--red); }
+
+/* ── BAI 3 SPECIFIC ── */
+.scenario-toggle {
+  display:flex;
+  gap:0.5rem;
+  margin-bottom:1rem;
+}
+.sc-btn {
+  flex:1;
+  background:var(--bg);
+  border:1px solid var(--border);
+  color:var(--muted);
+  font-family:var(--mono);
+  font-size:0.65rem;
+  letter-spacing:2px;
+  padding:0.6rem;
+  cursor:pointer;
+  border-radius:2px;
+  transition:all 0.2s;
+  text-transform:uppercase;
+}
+.sc-btn.active-safe   { background:rgba(34,197,94,0.1);  border-color:rgba(34,197,94,0.4);  color:var(--green); }
+.sc-btn.active-attack { background:rgba(239,68,68,0.1);  border-color:rgba(239,68,68,0.4);  color:var(--red); }
+
+.timeline {
+  display:flex;
+  flex-direction:column;
+  gap:0;
+  margin-top:1rem;
+}
+.tl-step {
+  display:flex;
+  gap:1rem;
+  opacity:0.2;
+  transition: opacity 0.4s;
+  padding: 0.75rem 0;
+  border-left:2px solid var(--border);
+  padding-left:1.25rem;
+  position:relative;
+}
+.tl-step.done { opacity:1; }
+.tl-step::before {
+  content:'';
+  position:absolute;
+  left:-5px; top:1.1rem;
+  width:8px; height:8px;
+  border-radius:50%;
+  background: var(--border);
+  transition: background 0.3s;
+}
+.tl-step.done::before { background:var(--orange); }
+.tl-step.done.step-safe::before { background:var(--green); }
+.tl-step.done.step-danger::before { background:var(--red); }
+
+.tl-icon { font-size:1.2rem; min-width:28px; }
+.tl-content { flex:1; }
+.tl-title {
+  font-family:var(--mono);
+  font-size:0.72rem;
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-bottom:0.25rem;
+}
+.tl-title.green  { color:var(--green); }
+.tl-title.red    { color:var(--red); }
+.tl-title.orange { color:var(--orange); }
+.tl-title.purple { color:var(--purple-light); }
+.tl-desc {
+  font-family:var(--mono);
+  font-size:0.7rem;
+  color:var(--muted);
+  line-height:1.6;
+  word-break:break-all;
+}
+.tl-desc .val { color:var(--text); }
+.tl-desc .val-red { color:var(--red); }
+.tl-desc .val-green { color:var(--green); }
+
+/* ── LOG ── */
+.log {
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:2px;
+  padding:1rem;
+  font-family:var(--mono);
+  font-size:0.7rem;
+  line-height:1.9;
+  max-height:220px;
+  overflow-y:auto;
+  margin-top:1rem;
+}
+.log-line { display:block; }
+.log-line .ts  { color:var(--muted); margin-right:0.5rem; }
+.log-line .ok  { color:var(--green); }
+.log-line .err { color:var(--red); }
+.log-line .inf { color:var(--orange); }
+.log-line .acc { color:var(--accent); }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed; bottom:2rem; left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--accent); color:#000;
+  font-family:var(--mono); font-size:0.7rem;
+  padding:7px 18px; letter-spacing:2px;
+  opacity:0; transition:all 0.25s;
+  pointer-events:none; border-radius:2px; z-index:999;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+/* ── LOADER ── */
+.loader { display:none; font-family:var(--mono); font-size:0.75rem; color:var(--accent); letter-spacing:3px; text-align:center; padding:0.5rem 0; }
+.loader.show { display:block; }
+.dot { animation:blink 1.2s infinite; }
+.dot:nth-child(2) { animation-delay:.2s; }
+.dot:nth-child(3) { animation-delay:.4s; }
+
+/* ── PROGRESS BAR ── */
+.prog-wrap { background:var(--border); border-radius:2px; height:4px; overflow:hidden; margin-top:0.5rem; }
+.prog-bar  { height:100%; width:0%; transition:width 0.4s; border-radius:2px; }
+
+/* ── ANIMATIONS ── */
+@keyframes fadeDown { from{opacity:0;transform:translateY(-18px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeUp   { from{opacity:0;transform:translateY(14px)}  to{opacity:1;transform:translateY(0)} }
+@keyframes blink    { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+@keyframes pulse    { 0%,100%{opacity:1} 50%{opacity:0.5} }
+
+/* ── RESPONSIVE ── */
+@media(max-width:520px) {
+  .stats { grid-template-columns:1fr 1fr; }
+  .row { flex-direction:column; }
+  .btn { width:100%; }
+  h1 { font-size:2rem; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HEADER -->
+  <header>
+    <div class="top-badge">// BÀI TẬP HÀM BĂM</div>
+    <h1>Hàm <em>Băm</em> SHA</h1>
+    <p class="sub">SHA-256 · SHA-512 · Toàn vẹn file · Gửi nhận an toàn</p>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab active" data-tab="1" onclick="switchTab(1)">Bài 1 — Băm văn bản</button>
+    <button class="tab"        data-tab="2" onclick="switchTab(2)">Bài 2 — Toàn vẹn file</button>
+    <button class="tab"        data-tab="3" onclick="switchTab(3)">Bài 3 — Gửi &amp; Nhận</button>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BÀI 1                                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="panel active" id="panel1">
+    <div class="card">
+      <div class="card-label cl-green">Nhập dữ liệu gốc</div>
+      <div class="row">
+        <input type="text" id="b1input" placeholder="Nhập văn bản..." value="Kiet!" />
+        <button class="btn btn-green" onclick="bai1Run()">Băm ngay</button>
+      </div>
+      <div class="loader" id="b1loader">Đang tính<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+    </div>
+
+    <div class="card" id="b1result" style="display:none">
+      <div class="card-label cl-green">Kết quả SHA-256</div>
+      <div class="algo-row">
+        <span class="tag tag-256">SHA-256</span>
+        <span class="bit-info">256 bit · 64 ký tự hex</span>
+        <button class="btn btn-sm" onclick="copyText(b1h256,'hash256')">COPY</button>
+      </div>
+      <div class="hash-out" id="b1h256display"></div>
+
+      <div class="divider"></div>
+
+      <div class="card-label cl-purple">Kết quả SHA-512</div>
+      <div class="algo-row">
+        <span class="tag tag-512">SHA-512</span>
+        <span class="bit-info">512 bit · 128 ký tự hex</span>
+        <button class="btn btn-sm" onclick="copyText(b1h512,'hash512')">COPY</button>
+      </div>
+      <div class="hash-out" id="b1h512display"></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-n hl-green" id="b1len256">64</div>
+          <div class="stat-l">Ký tự SHA-256</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n hl-purple" id="b1len512">128</div>
+          <div class="stat-l">Ký tự SHA-512</div>
+        </div>
+        <div class="stat">
+          <div class="stat-n" id="b1inputLen" style="color:var(--orange)">0</div>
+          <div class="stat-l">Ký tự đầu vào</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BÀI 2                                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="panel" id="panel2">
+
+    <!-- BƯỚC 1: Chọn file -->
+    <div class="card">
+      <div class="card-label cl-purple">Bước 1 — Chọn file cần kiểm tra</div>
+      <div class="file-drop" id="b2drop">
+        <input type="file" id="b2file" onchange="b2FileChosen(this)" />
+        <div class="drop-icon">📂</div>
+        <div class="drop-text">Kéo thả file vào đây hoặc <strong>nhấp để chọn</strong></div>
+      </div>
+      <div class="file-info" id="b2fileInfo">
+        <span class="fi-name" id="b2fname">—</span>
+        <span class="fi-size" id="b2fsize">—</span>
+      </div>
+    </div>
+
+    <!-- BƯỚC 2: Tính hash -->
+    <div class="card">
+      <div class="card-label cl-purple">Bước 2 — Hash SHA-512 của file</div>
+      <button class="btn btn-purple" onclick="b2Compute()" style="margin-bottom:0.75rem">Tính SHA-512</button>
+      <div class="loader" id="b2loader">Đang băm file<span class="dot">.</span><span class="dot">.</span><span class="dot">.</span></div>
+      <div class="prog-wrap" id="b2progWrap" style="display:none">
+        <div class="prog-bar" id="b2prog" style="background:var(--purple-light)"></div>
+      </div>
+      <div class="hash-out" id="b2hashDisplay" style="margin-top:0.75rem;display:none"></div>
+    </div>
+
+    <!-- BƯỚC 3: Nhập hash gốc để so sánh -->
+    <div class="card">
+      <div class="card-label cl-purple">Bước 3 — Nhập hash gốc để so sánh</div>
+      <textarea id="b2expected" placeholder="Dán hash SHA-512 gốc vào đây để xác minh tính toàn vẹn..."></textarea>
+      <button class="btn btn-purple" onclick="b2Verify()" style="margin-top:0.75rem">Xác thực toàn vẹn</button>
+      <div class="integrity-result" id="b2result"></div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════ -->
+  <!-- BÀI 3                                      -->
+  <!-- ══════════════════════════════════════════ -->
+  <div class="panel" id="panel3">
+    <div class="card">
+      <div class="card-label cl-orange">Thiết lập kịch bản</div>
+
+      <!-- Nội dung file -->
+      <p style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);letter-spacing:1px;margin-bottom:0.4rem">NỘI DUNG FILE GỬI</p>
+      <textarea id="b3content" rows="3" placeholder="Nhập nội dung file cần gửi...">Tài liệu mật - Kiet - 2025</textarea>
+
+      <!-- Kịch bản -->
+      <p style="font-family:var(--mono);font-size:0.7rem;color:var(--muted);letter-spacing:1px;margin:1rem 0 0.4rem">KỊCH BẢN</p>
+      <div class="scenario-toggle">
+        <button class="sc-btn active-safe" id="scSafe"   onclick="setScenario(false)">✅ Bình thường</button>
+        <button class="sc-btn"             id="scAttack" onclick="setScenario(true)" >⚠️ Tấn công MitM</button>
+      </div>
+
+      <button class="btn btn-orange" onclick="b3Run()" style="margin-top:0.5rem;width:100%">Chạy mô phỏng</button>
+    </div>
+
+    <!-- Timeline -->
+    <div class="card" id="b3timeline" style="display:none">
+      <div class="card-label cl-orange">Quá trình gửi / nhận</div>
+      <div class="timeline">
+
+        <div class="tl-step step-safe" id="tl1">
+          <div class="tl-icon">📤</div>
+          <div class="tl-content">
+            <div class="tl-title green">Người gửi — Tính hash</div>
+            <div class="tl-desc" id="tl1desc">—</div>
+          </div>
+        </div>
+
+        <div class="tl-step step-safe" id="tl2">
+          <div class="tl-icon">📦</div>
+          <div class="tl-content">
+            <div class="tl-title green">Đóng gói &amp; gửi đi</div>
+            <div class="tl-desc" id="tl2desc">—</div>
+          </div>
+        </div>
+
+        <div class="tl-step" id="tl3">
+          <div class="tl-icon">🌐</div>
+          <div class="tl-content">
+            <div class="tl-title orange" id="tl3title">Đường truyền mạng</div>
+            <div class="tl-desc" id="tl3desc">—</div>
+          </div>
+        </div>
+
+        <div class="tl-step" id="tl4">
+          <div class="tl-icon">📥</div>
+          <div class="tl-content">
+            <div class="tl-title purple">Người nhận — Tính hash</div>
+            <div class="tl-desc" id="tl4desc">—</div>
+          </div>
+        </div>
+
+        <div class="tl-step" id="tl5">
+          <div class="tl-icon">🔍</div>
+          <div class="tl-content">
+            <div class="tl-title" id="tl5title">So sánh &amp; Kết luận</div>
+            <div class="tl-desc" id="tl5desc">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log -->
+      <div class="log" id="b3log"></div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- TOAST -->
+<div class="toast" id="toast">ĐÃ SAO CHÉP</div>
+
+<script>
+// ─── UTILS ───────────────────────────────────────────
+let b1h256 = '', b1h512 = '';
+let b2fileData = null, b2hash = '';
+let mitm = false;
+
+async function sha256(data) {
+  const buf = await crypto.subtle.digest('SHA-256', typeof data === 'string' ? new TextEncoder().encode(data) : data);
+  return hex(buf);
+}
+async function sha512(data) {
+  const buf = await crypto.subtle.digest('SHA-512', typeof data === 'string' ? new TextEncoder().encode(data) : data);
+  return hex(buf);
+}
+function hex(buf) {
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function colorHash(h, cls) {
+  return `<span class="${cls}">${h.slice(0,8)}</span>${h.slice(8,-8)}<span class="${cls}">${h.slice(-8)}</span>`;
+}
+function showToast(msg='ĐÃ SAO CHÉP') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+function copyText(val, label) {
+  navigator.clipboard.writeText(val).then(()=>showToast());
+}
+function fmtSize(n) {
+  if(n < 1024) return n+' bytes';
+  if(n < 1048576) return (n/1024).toFixed(1)+' KB';
+  return (n/1048576).toFixed(2)+' MB';
+}
+function switchTab(n) {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelector(`.tab[data-tab="${n}"]`).classList.add('active');
+  document.getElementById('panel'+n).classList.add('active');
+}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+// ─── BÀI 1 ───────────────────────────────────────────
+async function bai1Run() {
+  const val = document.getElementById('b1input').value.trim();
+  if(!val) { document.getElementById('b1input').focus(); return; }
+  const loader = document.getElementById('b1loader');
+  const result = document.getElementById('b1result');
+  loader.classList.add('show');
+  result.style.display = 'none';
+  await sleep(350);
+
+  b1h256 = await sha256(val);
+  b1h512 = await sha512(val);
+
+  document.getElementById('b1h256display').innerHTML = colorHash(b1h256,'hl-green');
+  document.getElementById('b1h512display').innerHTML = colorHash(b1h512,'hl-purple');
+  document.getElementById('b1len256').textContent = b1h256.length;
+  document.getElementById('b1len512').textContent = b1h512.length;
+  document.getElementById('b1inputLen').textContent = val.length;
+
+  loader.classList.remove('show');
+  result.style.display = 'block';
+}
+document.getElementById('b1input').addEventListener('keydown', e=>{ if(e.key==='Enter') bai1Run(); });
+
+// ─── BÀI 2 ───────────────────────────────────────────
+const drop = document.getElementById('b2drop');
+drop.addEventListener('dragover', e=>{ e.preventDefault(); drop.classList.add('drag'); });
+drop.addEventListener('dragleave', ()=>drop.classList.remove('drag'));
+drop.addEventListener('drop', e=>{
+  e.preventDefault(); drop.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f) loadFile(f);
+});
+
+function b2FileChosen(inp) {
+  if(inp.files[0]) loadFile(inp.files[0]);
+}
+function loadFile(f) {
+  const reader = new FileReader();
+  reader.onload = e => { b2fileData = e.target.result; };
+  reader.readAsArrayBuffer(f);
+  document.getElementById('b2fname').textContent = f.name;
+  document.getElementById('b2fsize').textContent = fmtSize(f.size);
+  document.getElementById('b2fileInfo').classList.add('show');
+  document.getElementById('b2hashDisplay').style.display='none';
+  document.getElementById('b2result').classList.remove('show');
+  b2hash = '';
+}
+async function b2Compute() {
+  if(!b2fileData) { showToast('Chọn file trước!'); return; }
+  const loader = document.getElementById('b2loader');
+  const progWrap = document.getElementById('b2progWrap');
+  const prog = document.getElementById('b2prog');
+  loader.classList.add('show');
+  progWrap.style.display='block';
+  prog.style.width='0%';
+  await sleep(200);
+  prog.style.width='60%';
+  await sleep(300);
+  b2hash = await sha512(b2fileData);
+  prog.style.width='100%';
+  await sleep(200);
+  loader.classList.remove('show');
+  progWrap.style.display='none';
+  const display = document.getElementById('b2hashDisplay');
+  display.style.display='block';
+  display.innerHTML = colorHash(b2hash,'hl-purple');
+  document.getElementById('b2expected').value = b2hash;
+}
+async function b2Verify() {
+  if(!b2hash) { showToast('Tính hash file trước!'); return; }
+  const expected = document.getElementById('b2expected').value.trim();
+  if(!expected) { showToast('Nhập hash gốc để so sánh!'); return; }
+  const res = document.getElementById('b2result');
+  if(b2hash === expected) {
+    res.className='integrity-result show ok';
+    res.innerHTML='✅ FILE TOÀN VẸN — Hash khớp hoàn toàn!';
+  } else {
+    const diff = [...b2hash].filter((c,i)=>c!==expected[i]).length;
+    res.className='integrity-result show fail';
+    res.innerHTML=`❌ FILE ĐÃ BỊ THAY ĐỔI — ${diff}/128 ký tự hash khác nhau!`;
+  }
+}
+
+// ─── BÀI 3 ───────────────────────────────────────────
+function setScenario(attack) {
+  mitm = attack;
+  document.getElementById('scSafe').className   = attack ? 'sc-btn' : 'sc-btn active-safe';
+  document.getElementById('scAttack').className = attack ? 'sc-btn active-attack' : 'sc-btn';
+}
+
+function addLog(msg, type='inf') {
+  const log = document.getElementById('b3log');
+  const now = new Date();
+  const ts = now.toTimeString().slice(0,8);
+  const line = document.createElement('span');
+  line.className='log-line';
+  line.innerHTML=`<span class="ts">[${ts}]</span><span class="${type}">${msg}</span>`;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function stepDone(id, safe=true) {
+  await sleep(600);
+  const el = document.getElementById(id);
+  el.classList.add('done');
+  if(!safe) el.classList.add('step-danger');
+  else el.classList.add('step-safe');
+}
+
+async function b3Run() {
+  const content = document.getElementById('b3content').value.trim();
+  if(!content) { showToast('Nhập nội dung file!'); return; }
+
+  // Reset
+  document.getElementById('b3timeline').style.display='block';
+  document.getElementById('b3log').innerHTML='';
+  ['tl1','tl2','tl3','tl4','tl5'].forEach(id=>{
+    const el=document.getElementById(id);
+    el.classList.remove('done','step-safe','step-danger');
+  });
+
+  // Bước 1: Người gửi tính hash
+  addLog('Người gửi: Tính SHA-512 của file...','acc');
+  const hashGoc = await sha512(content);
+  document.getElementById('tl1desc').innerHTML = `SHA-512: <span class="val">${hashGoc.slice(0,24)}...${hashGoc.slice(-8)}</span>`;
+  addLog(`Hash gốc: ${hashGoc.slice(0,20)}...`,'ok');
+  await stepDone('tl1', true);
+
+  // Bước 2: Đóng gói gửi
+  addLog('Đóng gói file + hash, chuẩn bị gửi...','acc');
+  document.getElementById('tl2desc').innerHTML =
+    `📄 File: <span class="val">"${content.slice(0,30)}${content.length>30?'...':''}"</span><br>` +
+    `🔑 Hash: <span class="val">${hashGoc.slice(0,20)}...</span>`;
+  addLog('Đã đóng gói thành công. Đang gửi qua mạng...','ok');
+  await stepDone('tl2', true);
+
+  // Bước 3: Đường truyền mạng
+  let contentNhan = content;
+  let hashNhan;
+  if(mitm) {
+    addLog('⚠️ Phát hiện tấn công MitM!','err');
+    addLog('Kẻ tấn công đang chèn dữ liệu giả...','err');
+    contentNhan = content + '\n[DỮ LIỆU GIẢ MẠO]';
+    document.getElementById('tl3title').textContent = '⚠️ Tấn công MitM — File bị chỉnh sửa!';
+    document.getElementById('tl3desc').innerHTML =
+      `File gốc bị chỉnh sửa trên đường truyền!<br>` +
+      `Dữ liệu chèn vào: <span class="val-red">"[DỮ LIỆU GIẢ MẠO]"</span>`;
+    await stepDone('tl3', false);
+    addLog('File đã bị chỉnh sửa. Gửi đến người nhận...','err');
+  } else {
+    addLog('Đường truyền an toàn, file giữ nguyên.','ok');
+    document.getElementById('tl3title').textContent = '✅ Đường truyền an toàn';
+    document.getElementById('tl3desc').innerHTML = `<span class="val-green">File giữ nguyên — không bị can thiệp.</span>`;
+    await stepDone('tl3', true);
+  }
+
+  // Bước 4: Người nhận tính hash
+  addLog('Người nhận: Tính SHA-512 của file nhận được...','acc');
+  hashNhan = await sha512(contentNhan);
+  document.getElementById('tl4desc').innerHTML =
+    `SHA-512: <span class="${mitm?'val-red':'val'}">${hashNhan.slice(0,24)}...${hashNhan.slice(-8)}</span>`;
+  addLog(`Hash nhận: ${hashNhan.slice(0,20)}...`, mitm?'err':'ok');
+  await stepDone('tl4', !mitm);
+
+  // Bước 5: So sánh
+  await sleep(400);
+  const ok = hashGoc === hashNhan;
+  const diff = ok ? 0 : [...hashGoc].filter((c,i)=>c!==hashNhan[i]).length;
+  const tl5 = document.getElementById('tl5');
+  tl5.classList.add('done');
+  if(ok) {
+    tl5.classList.add('step-safe');
+    document.getElementById('tl5title').textContent = '✅ Kết luận: File toàn vẹn';
+    document.getElementById('tl5desc').innerHTML =
+      `<span class="val-green">Hash khớp hoàn toàn — An toàn để sử dụng!</span>`;
+    addLog('✅ KẾT QUẢ: File TOÀN VẸN — Xác thực thành công!','ok');
+  } else {
+    tl5.classList.add('step-danger');
+    document.getElementById('tl5title').textContent = '❌ Kết luận: File đã bị thay đổi!';
+    document.getElementById('tl5desc').innerHTML =
+      `<span class="val-red">Hash KHÔNG khớp — ${diff}/128 ký tự khác nhau!</span><br>` +
+      `<span style="color:var(--muted)">🚫 Hủy file, yêu cầu gửi lại!</span>`;
+    addLog(`❌ KẾT QUẢ: File BỊ THAY ĐỔI — ${diff}/128 ký tự hash khác!`,'err');
+  }
+}
+
+// Auto run bài 1
+window.onload = ()=> bai1Run();
+</script>
+</body>
+</html>
